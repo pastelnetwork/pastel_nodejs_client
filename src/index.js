@@ -1,5 +1,4 @@
-import getRpcConnection from "./rpcConnection.js";
-
+import { getRpcConnection } from "./rpcConnection.js";
 import PastelBlockchainOperations from "./blockchainOperations.js";
 import {
   getSha256HashOfInputData,
