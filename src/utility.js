@@ -3,7 +3,7 @@ import dns from "dns/promises";
 import { exec, execSync } from "child_process";
 import { promisify } from "util";
 import logger from "./logger.js";
-import { getCurrentPastelBlockHeightAndHash } from "./blockchainOperations.js"; // Adjust import path as needed
+import { PastelBlockchainOperations } from "./blockchainOperations.js"; // Adjust import path as needed
 
 const execAsync = promisify(exec);
 
@@ -63,7 +63,7 @@ const getExternalIp = async () => {
 const checkIfPasteldIsRunningCorrectlyAndRelaunchIfRequired = async () => {
   try {
     const currentPastelBlockHeightAndHash =
-      await getCurrentPastelBlockHeightAndHash();
+      await PastelBlockchainOperations.getCurrentPastelBlockHeightAndHash();
     const currentPastelBlockNumber =
       currentPastelBlockHeightAndHash.bestBlockHeight;
     if (
