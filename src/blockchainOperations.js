@@ -5,8 +5,8 @@ import path from "path";
 import os from "os";
 import { fromUnixTime } from "date-fns";
 
-class PastelBlockchainOperations {
-  constructor() {
+export default class PastelBlockchainOperations {
+    constructor() {
     this.isInitialized = false; // Initialization flag
     this.initialize();
   }
@@ -1603,5 +1603,3 @@ class PastelBlockchainOperations {
     return this.rpcConnection.call("z_viewtransaction", [txid]);
   }
 }
-
-export default PastelBlockchainOperations;
