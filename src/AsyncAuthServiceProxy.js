@@ -1,24 +1,15 @@
 import axios from "axios";
 import { URL } from "url";
 import logger from "./logger.js";
-import { getConfig } from "./config.js"; // Adjusted import path as necessary
-import Decimal from "decimal.js"; // Ensure Decimal is imported
 
 class JSONRPCException extends Error {
   constructor(rpc_error) {
     super(rpc_error.message);
     this.code = rpc_error.code;
     this.message = rpc_error.message;
-    logger.error(`Error occurred in JSONRPCException: ${this.message}`);
+    this.data = rpc_error.data; // Include additional data if available
+    logger.error(`JSONRPC Error: ${this.code} - ${this.message}`);
   }
-}
-
-// Function to encode Decimal instances for JSON serialization
-function encodeForJson(key, value) {
-  if (value instanceof Decimal) {
-    return value.toString(); // Convert Decimal instances to strings
-  }
-  return value;
 }
 
 class AsyncAuthServiceProxy {
@@ -31,35 +22,33 @@ class AsyncAuthServiceProxy {
   ) {
     this.serviceUrl = serviceUrl;
     this.serviceName = serviceName;
-    this.url = new URL(serviceUrl);
-    this.authHeader = `Basic ${Buffer.from(`${this.url.username}:${this.url.password}`).toString("base64")}`;
     this.reconnectTimeout = reconnectTimeout;
     this.reconnectAmount = reconnectAmount;
     this.requestTimeout = requestTimeout;
     this.idCount = 0;
+    // Extract username and password from the URL to include in the Authorization header
+    const url = new URL(serviceUrl);
+    this.authHeader = `Basic ${Buffer.from(`${url.username}:${url.password}`).toString("base64")}`;
+    // Remove credentials from the URL to prevent double authentication
+    this.postUrl = serviceUrl.replace(`${url.username}:${url.password}@`, "");
   }
 
   async call(method, ...params) {
-    // Serialize parameters, handling Decimal conversion
-    const serializedParams = params;
-    const postData = JSON.stringify(
-      {
-        version: "1.1",
-        method: this.serviceName ? `${this.serviceName}.${method}` : method,
-        params: serializedParams,
-        id: ++this.idCount,
-      },
-      encodeForJson
-    ); // Apply the custom serialization function
+    const postData = JSON.stringify({
+      jsonrpc: "1.0",
+      id: ++this.idCount,
+      method: this.serviceName ? `${this.serviceName}.${method}` : method,
+      params: params,
+    });
 
     const headers = {
       Authorization: this.authHeader,
-      "Content-type": "application/json",
+      "Content-Type": "application/json",
     };
 
     for (let i = 0; i <= this.reconnectAmount; i++) {
       try {
-        const response = await axios.post(this.serviceUrl, postData, {
+        const response = await axios.post(this.postUrl, postData, {
           headers: headers,
           timeout: this.requestTimeout * 1000,
         });
@@ -68,11 +57,12 @@ class AsyncAuthServiceProxy {
         return response.data.result;
       } catch (error) {
         if (i < this.reconnectAmount) {
-          const sleepTime = this.reconnectTimeout * Math.pow(2, i);
           logger.info(
-            `Reconnect attempt #${i + 1} failed, waiting for ${sleepTime} seconds before retrying.`
+            `Reconnect attempt #${i + 1} failed, retrying in ${this.reconnectTimeout} seconds.`
           );
-          await new Promise((resolve) => setTimeout(resolve, sleepTime * 1000));
+          await new Promise((resolve) =>
+            setTimeout(resolve, this.reconnectTimeout * 1000)
+          );
         } else {
           logger.error("Reconnect attempts exceeded, operation failed.");
           throw error;
@@ -82,8 +72,4 @@ class AsyncAuthServiceProxy {
   }
 }
 
-export const createRpcConnection = async () => {
-  const { rpcHost, rpcPort, rpcUser, rpcPassword } = await getConfig();
-  const serviceUrl = `http://${rpcUser}:${rpcPassword}@${rpcHost}:${rpcPort}`;
-  return new AsyncAuthServiceProxy(serviceUrl);
-};
+export default AsyncAuthServiceProxy;

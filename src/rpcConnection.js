@@ -1,9 +1,15 @@
-// Import adjusted to the new async getConfig
-import { getConfig } from "./config.js";
-import { AsyncAuthServiceProxy } from "./AsyncAuthServiceProxy.js";
+// rpcConnection.js
 
-export const createRpcConnection = async () => {
-  const { rpcHost, rpcPort, rpcUser, rpcPassword } = await getConfig();
-  const serviceUrl = `http://${rpcUser}:${rpcPassword}@${rpcHost}:${rpcPort}`;
-  return new AsyncAuthServiceProxy(serviceUrl);
+import { getConfig } from "./config.js";
+import AsyncAuthServiceProxy from "./AsyncAuthServiceProxy.js";
+
+let instance = null;
+
+export const getRpcConnection = async () => {
+  if (!instance) {
+    const { rpcHost, rpcPort, rpcUser, rpcPassword } = await getConfig();
+    const serviceUrl = `http://${rpcUser}:${rpcPassword}@${rpcHost}:${rpcPort}`;
+    instance = new AsyncAuthServiceProxy(serviceUrl);
+  }
+  return instance;
 };
