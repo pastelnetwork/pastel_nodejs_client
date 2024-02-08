@@ -2,6 +2,8 @@
 
 The Pastel Node.js Client is a comprehensive library designed to facilitate interactions with the Pastel blockchain from Node.js applications. This library simplifies tasks such as querying blockchain data, managing Pastel IDs, and performing utility operations related to Pastel and networking.
 
+![Illustration](https://raw.githubusercontent.com/pastelnetwork/pastel_nodejs_client/master/illustration.webp)
+
 ## Features
 
 ### Blockchain Operations
