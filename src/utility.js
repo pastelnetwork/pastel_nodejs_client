@@ -3,7 +3,7 @@ import dns from "dns/promises";
 import { exec, execSync } from "child_process";
 import { promisify } from "util";
 import logger from "./logger.js";
-import { PastelBlockchainOperations } from "./blockchainOperations.js"; // Adjust import path as needed
+import PastelBlockchainOperations from "./blockchainOperations.js";
 
 const execAsync = promisify(exec);
 
