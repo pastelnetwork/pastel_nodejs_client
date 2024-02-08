@@ -7,12 +7,15 @@ import { fromUnixTime } from "date-fns";
 
 class PastelBlockchainOperations {
   constructor() {
+    this.isInitialized = false; // Initialization flag
     this.initialize();
   }
 
   async initialize() {
-    // Initialize the RPC connection once for the class instance
+    // Logic to initialize the RPC connection and other setup tasks
     this.rpcConnection = await getRpcConnection();
+    // After successful initialization
+    this.isInitialized = true;
   }
 
   // Universal function to call any RPC method with arguments
