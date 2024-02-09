@@ -56,21 +56,22 @@ export default class PastelBlockchainOperations {
   async getCurrentPastelBlockHeightAndHash() {
     try {
       // Get the best block hash
+
       const bestBlockHash = await this.rpcConnection.call("getbestblockhash");
-      if (!bestBlockHash) {
-        throw new Error("Failed to fetch the best block hash");
-      }
-      // Get the details for the block with that hash
       const bestBlockDetails = await this.rpcConnection.call(
         "getblock",
         bestBlockHash
       );
+      if (!bestBlockHash) {
+        throw new Error("Failed to fetch the best block hash");
+      }
       if (!bestBlockDetails) {
         throw new Error(`Failed to fetch details for block ${bestBlockHash}`);
       }
+      const bestBlockHeight = bestBlockDetails.height;
       // Return the height and hash of the best block
       return {
-        bestBlockHeight: bestBlockDetails.height,
+        bestBlockHeight: bestBlockHeight,
         bestBlockHash: bestBlockHash,
       };
     } catch (error) {
@@ -79,24 +80,17 @@ export default class PastelBlockchainOperations {
     }
   }
 
-  async getPreviousBlockHashAndMerkleRoot() {
-    const currentPastelBlockHeightAndHash =
+  async getBestBlockHashAndMerkleRoot() {
+    const { bestBlockHeight, bestBlockHash } =
       await this.getCurrentPastelBlockHeightAndHash();
-    const previousBlockHeight =
-      currentPastelBlockHeightAndHash.bestBlockHeight - 1;
-
-    const previousBlockHash = await this.rpcConnection.call(
-      "getblockhash",
-      previousBlockHeight
-    );
-    const previousBlockDetails = await this.rpcConnection.call(
+    const bestBlockDetails = await this.rpcConnection.call(
       "getblock",
-      previousBlockHash
+      bestBlockHash
     );
     return {
-      previousBlockHash,
-      previousBlockMerkleRoot: previousBlockDetails.merkleroot,
-      previousBlockHeight,
+      bestBlockHash,
+      bestBlockHeight,
+      bestBlockMerkleRoot: bestBlockDetails.merkleroot,
     };
   }
 
