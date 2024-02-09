@@ -6,7 +6,7 @@ import os from "os";
 import { fromUnixTime } from "date-fns";
 
 export default class PastelBlockchainOperations {
-    constructor() {
+  constructor() {
     this.isInitialized = false; // Initialization flag
     this.initialize();
   }
@@ -81,7 +81,7 @@ export default class PastelBlockchainOperations {
 
   async getPreviousBlockHashAndMerkleRoot() {
     const currentPastelBlockHeightAndHash =
-      await getCurrentPastelBlockHeightAndHash();
+      await this.getCurrentPastelBlockHeightAndHash();
     const previousBlockHeight =
       currentPastelBlockHeightAndHash.bestBlockHeight - 1;
 
@@ -102,7 +102,7 @@ export default class PastelBlockchainOperations {
 
   async getLastBlockData() {
     const currentPastelBlockHeightAndHash =
-      await getCurrentPastelBlockHeightAndHash();
+      await this.getCurrentPastelBlockHeightAndHash();
     const currentBlockHeight = currentPastelBlockHeightAndHash.bestBlockHeight;
     const blockData = await this.rpcConnection.call(
       "getblock",
