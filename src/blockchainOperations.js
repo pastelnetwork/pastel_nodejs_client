@@ -143,6 +143,27 @@ export default class PastelBlockchainOperations {
     }
   }
 
+  async verifyBase64MessageWithPastelid(
+    pastelid,
+    messageToVerifyAsBase64,
+    pastelidSignatureOnMessage
+  ) {
+    try {
+      const verificationResult = await this.rpcConnection.call(
+        "pastelid",
+        "verify-base64-encoded",
+        messageToVerifyAsBase64,
+        pastelidSignatureOnMessage,
+        pastelid,
+        "ed448"
+      );
+      return verificationResult.verification; // Adjust based on actual RPC response structure
+    } catch (error) {
+      logger.error(`An error occurred: ${error.message}`);
+      throw error;
+    }
+  }
+
   async checkMasternodeTop() {
     try {
       const masternodeTopCommandOutput = await this.rpcConnection.call(
