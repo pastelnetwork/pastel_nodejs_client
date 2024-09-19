@@ -6,14 +6,15 @@ import os from "os";
 import { fromUnixTime } from "date-fns";
 
 export default class PastelBlockchainOperations {
-  constructor() {
+  constructor(directoryWithPastelConf = null) {
     this.isInitialized = false; // Initialization flag
+    this.directoryWithPastelConf = directoryWithPastelConf;
     this.initialize();
   }
 
   async initialize() {
     // Logic to initialize the RPC connection and other setup tasks
-    this.rpcConnection = await getRpcConnection();
+    this.rpcConnection = await getRpcConnection(this.directoryWithPastelConf);
     // After successful initialization
     this.isInitialized = true;
   }
@@ -57,22 +58,26 @@ export default class PastelBlockchainOperations {
     try {
       // Get the best block hash
 
-      const bestBlockHash = await this.rpcConnection.call("getbestblockhash");
-      const bestBlockDetails = await this.rpcConnection.call(
-        "getblock",
-        bestBlockHash
+      const blockCount = await this.rpcConnection.call("getblockcount");
+      if (!blockCount) {
+        throw new Error("Failed to fetch the block count");
+      }
+
+      const blockDetails = await this.rpcConnection.call(
+        "getblockhash",
+        blockCount,
+        1
       );
-      if (!bestBlockHash) {
-        throw new Error("Failed to fetch the best block hash");
+      if (!Array.isArray(blockDetails) || blockDetails.length === 0) {
+        throw new Error(`Failed to fetch details for block ${blockCount}`);
       }
-      if (!bestBlockDetails) {
-        throw new Error(`Failed to fetch details for block ${bestBlockHash}`);
-      }
-      const bestBlockHeight = bestBlockDetails.height;
+      // Access the first item in the blockDetails array
+      const currentBlock = blockDetails[0];
+
       // Return the height and hash of the best block
       return {
-        bestBlockHeight: bestBlockHeight,
-        bestBlockHash: bestBlockHash,
+        bestBlockHeight: currentBlock.height,
+        bestBlockHash: currentBlock.hash,
       };
     } catch (error) {
       logger.error(`An error occurred: ${error.message}`);

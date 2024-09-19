@@ -5,21 +5,76 @@ import os from "os";
 
 dotenv.config();
 
+const NetworkMode = Object.freeze({
+  MAINNET: "mainnet",
+  TESTNET: "testnet",
+  DEVNET: "devnet",
+  REGTEST: "regtest",
+  UNKNOWN: "unknown",
+});
+
+const DefaultRpcPorts = Object.freeze({
+  [NetworkMode.MAINNET]: "9932",
+  [NetworkMode.TESTNET]: "19932",
+  [NetworkMode.DEVNET]: "29932",
+  [NetworkMode.REGTEST]: "18232",
+});
+
+function getNetworkMode(configFileLines) {
+  const networkModeMap = {
+    'mainnet': NetworkMode.MAINNET,
+    'testnet': NetworkMode.TESTNET,
+    'devnet': NetworkMode.DEVNET,
+    'regtest': NetworkMode.REGTEST,
+  };
+
+  for (const line of configFileLines) {
+    const trimmedLine = line.trim();
+
+    // Split the line into key and value at the first '=' character
+    const [key, value] = trimmedLine.split("=").map((str) => str.trim());
+
+    if (networkModeMap[key] && value === "1") {
+      return networkModeMap[key];
+    }
+  }
+
+  return NetworkMode.UNKNOWN;
+}
+
 const getRpcSettingsFromFile = async (
-  directoryWithPastelConf = path.join(os.homedir(), ".pastel")
+  directoryWithPastelConf = null
 ) => {
+  // set default directory to ~/.pastel if not provided or passed as null
+  if (!directoryWithPastelConf) {
+    directoryWithPastelConf = path.join(os.homedir(), ".pastel");
+  }
+  else {
+    if (directoryWithPastelConf.startsWith("~")) {
+      directoryWithPastelConf = directoryWithPastelConf.replace("~", os.homedir());
+    }
+    directoryWithPastelConf = path.resolve(directoryWithPastelConf);
+  }
   const configFile = path.join(directoryWithPastelConf, "pastel.conf");
   const data = await fs.readFile(configFile, "utf8");
   const lines = data.split("\n");
+
   let rpcHost = "127.0.0.1",
     rpcPort = "19932",
     rpcUser,
     rpcPassword,
     otherFlags = {};
 
+  const networkMode = getNetworkMode(lines);
+  if (networkMode !== NetworkMode.UNKNOWN) {
+    rpcPort = DefaultRpcPorts[networkMode];
+  }
+
   lines.forEach((line) => {
-    if (line.startsWith("rpcport")) rpcPort = line.split("=")[1].trim();
-    else if (line.startsWith("rpcuser")) rpcUser = line.split("=")[1].trim();
+    if (line.startsWith("rpcport"))
+      rpcPort = line.split("=")[1].trim();
+    else if (line.startsWith("rpcuser"))
+      rpcUser = line.split("=")[1].trim();
     else if (line.startsWith("rpcpassword"))
       rpcPassword = line.split("=")[1].trim();
     else if (!line.startsWith("rpchost") && line !== "") {
@@ -48,7 +103,9 @@ const writeRpcSettingsToEnvFile = async (
   await fs.writeFile(path.join(process.cwd(), ".env"), envContent);
 };
 
-export const getConfig = async () => {
+export const getConfig = async (
+  directoryWithPastelConf = null
+) => {
   let rpcHost = process.env.RPC_HOST,
     rpcPort = process.env.RPC_PORT,
     rpcUser = process.env.RPC_USER,
@@ -59,7 +116,7 @@ export const getConfig = async () => {
     console.log(
       "RPC settings not found in environment variables. Attempting to read from configuration file..."
     );
-    const rpcSettings = await getRpcSettingsFromFile();
+    const rpcSettings = await getRpcSettingsFromFile(directoryWithPastelConf);
     await writeRpcSettingsToEnvFile(
       rpcSettings.rpcHost,
       rpcSettings.rpcPort,
